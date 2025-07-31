@@ -4,22 +4,19 @@ import { useState } from 'react'
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert" // Import Alert
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 
 export default function Dashboard() {
   const [contentUrl, setContentUrl] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [results, setResults] = useState('');
-  const [error, setError] = useState<string | null>(null); // <-- New state for errors
-
-  // First, add the Alert component using shadcn
-  // In your terminal, run: npx shadcn-ui@latest add alert
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setIsLoading(true)
     setResults('');
-    setError(null); // <-- Clear previous errors
+    setError(null);
 
     try {
       const response = await fetch('/api/repurpose', {
@@ -33,15 +30,18 @@ export default function Dashboard() {
       const data = await response.json();
 
       if (!response.ok) {
-        // If response is not ok, use the error message from the API
         throw new Error(data.error || 'Something went wrong');
       }
       
       setResults(data.repurposedContent);
 
-    } catch (err: any) {
+    } catch (err) { // <-- FIX #3
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('An unexpected error occurred.');
+      }
       console.error(err);
-      setError(err.message); // <-- Set the error message to display
     }
 
     setIsLoading(false)
@@ -76,7 +76,7 @@ export default function Dashboard() {
         </CardContent>
       </Card>
 
-      {error && ( // <-- Display error message if it exists
+      {error && (
         <Alert variant="destructive" className="w-full max-w-xl mt-4">
           <AlertTitle>Error</AlertTitle>
           <AlertDescription>
