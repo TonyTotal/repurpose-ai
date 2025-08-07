@@ -5,17 +5,23 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { toast } from "sonner"
 
 export default function Dashboard() {
   const [contentUrl, setContentUrl] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [results, setResults] = useState('');
+  const [results, setResults] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
+
+  const handleCopy = (textToCopy: string) => {
+    navigator.clipboard.writeText(textToCopy);
+    toast.success("Tweet copied to clipboard!")
+  }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setIsLoading(true)
-    setResults('');
+    setResults([]);
     setError(null);
 
     try {
@@ -33,11 +39,28 @@ export default function Dashboard() {
         throw new Error(data.error || 'Something went wrong');
       }
       
-      setResults(data.repurposedContent);
+      console.log("Raw AI Response:", data.repurposedContent);
 
-    } catch (err) { // <-- FIX #3
+      // --- THE NEW, MORE ROBUST FIX IS HERE ---
+      const rawResponse = data.repurposedContent;
+      
+      // Find the start and end of the JSON object
+      const jsonStart = rawResponse.indexOf('{');
+      const jsonEnd = rawResponse.lastIndexOf('}');
+      
+      if (jsonStart === -1 || jsonEnd === -1) {
+        throw new Error("Could not find a valid JSON object in the AI's response.");
+      }
+
+      // Extract only the JSON part of the string
+      const jsonString = rawResponse.substring(jsonStart, jsonEnd + 1);
+      
+      const parsedData = JSON.parse(jsonString);
+      setResults(parsedData.twitterThread);
+
+    } catch (err) {
       if (err instanceof Error) {
-        setError(err.message);
+        setError(`Failed to process AI response: ${err.message}`);
       } else {
         setError('An unexpected error occurred.');
       }
@@ -62,7 +85,7 @@ export default function Dashboard() {
               <div className="flex flex-col space-y-1.5">
                 <Input
                   id="contentUrl"
-                  placeholder="https://your-favorite-blog.com/article"
+                  placeholder="[https://your-favorite-blog.com/article](https://your-favorite-blog.com/article)"
                   value={contentUrl}
                   onChange={(e) => setContentUrl(e.target.value)}
                   disabled={isLoading}
@@ -85,17 +108,20 @@ export default function Dashboard() {
         </Alert>
       )}
 
-      {results && (
-        <Card className="w-full max-w-xl mt-8">
-          <CardHeader>
-            <CardTitle>Generated Content</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <pre className="whitespace-pre-wrap font-sans text-sm">
-              {results}
-            </pre>
-          </CardContent>
-        </Card>
+      {results.length > 0 && (
+        <div className="w-full max-w-xl mt-8 space-y-4">
+          <h2 className="text-xl font-semibold">Generated Twitter Thread</h2>
+          {results.map((tweet, index) => (
+            <Card key={index}>
+              <CardContent className="p-4 flex justify-between items-start">
+                <p className="text-sm mr-4">{tweet}</p>
+                <Button variant="outline" size="sm" onClick={() => handleCopy(tweet)}>
+                  Copy
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       )}
     </div>
   )

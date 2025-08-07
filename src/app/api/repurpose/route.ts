@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     });
 
     if (!articleText) {
-        throw new Error("Could not extract article text. The site might be heavily JavaScript-based or have an unusual structure.");
+        throw new Error("Could not extract article text.");
     }
     console.log("Article text fetched successfully.");
 
@@ -40,22 +40,25 @@ export async function POST(request: Request) {
   }
 
   try {
-    const prompt = `You are a world-class social media expert. Based on the following article text, create an engaging and viral-style Twitter thread of 5 tweets. The thread should capture the key points and be easy to read.
+    const prompt = `You are a world-class social media expert. Based on the following article text, create an engaging Twitter thread of 5 tweets.
+
+    IMPORTANT: Your entire response must be a single, valid JSON object. The object should have a single key called "twitterThread", and its value should be an array of strings, where each string is a single tweet.
 
     Article Text:
     ---
     ${articleText.substring(0, 30000)} 
     ---
-
-    Twitter Thread:`;
+    `;
     console.log("Generating content with AI...");
 
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
+    
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
     console.log("AI content generated successfully.");
 
+    // The AI now returns a JSON string, so we send it directly
     return NextResponse.json({ repurposedContent: text });
 
   } catch (error) {
