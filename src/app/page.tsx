@@ -5,31 +5,36 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs" // Import Tabs
 import { toast } from "sonner"
+
+// Define a type for our results for better code safety
+type RepurposeResults = {
+  twitterTweets: string[];
+  linkedInPost: string;
+}
 
 export default function Dashboard() {
   const [contentUrl, setContentUrl] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [results, setResults] = useState<string[]>([]);
+  const [results, setResults] = useState<RepurposeResults | null>(null); // State is now an object or null
   const [error, setError] = useState<string | null>(null);
 
   const handleCopy = (textToCopy: string) => {
     navigator.clipboard.writeText(textToCopy);
-    toast.success("Tweet copied to clipboard!")
+    toast.success("Content copied to clipboard!")
   }
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setIsLoading(true)
-    setResults([]);
+    setResults(null);
     setError(null);
 
     try {
       const response = await fetch('/api/repurpose', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ contentUrl }),
       });
 
@@ -39,12 +44,7 @@ export default function Dashboard() {
         throw new Error(data.error || 'Something went wrong');
       }
       
-      console.log("Raw AI Response:", data.repurposedContent);
-
-      // --- THE NEW, MORE ROBUST FIX IS HERE ---
       const rawResponse = data.repurposedContent;
-      
-      // Find the start and end of the JSON object
       const jsonStart = rawResponse.indexOf('{');
       const jsonEnd = rawResponse.lastIndexOf('}');
       
@@ -52,11 +52,9 @@ export default function Dashboard() {
         throw new Error("Could not find a valid JSON object in the AI's response.");
       }
 
-      // Extract only the JSON part of the string
       const jsonString = rawResponse.substring(jsonStart, jsonEnd + 1);
-      
-      const parsedData = JSON.parse(jsonString);
-      setResults(parsedData.twitterThread);
+      const parsedData: RepurposeResults = JSON.parse(jsonString);
+      setResults(parsedData);
 
     } catch (err) {
       if (err instanceof Error) {
@@ -65,9 +63,9 @@ export default function Dashboard() {
         setError('An unexpected error occurred.');
       }
       console.error(err);
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false)
   }
 
   return (
@@ -85,7 +83,7 @@ export default function Dashboard() {
               <div className="flex flex-col space-y-1.5">
                 <Input
                   id="contentUrl"
-                  placeholder="[https://your-favorite-blog.com/article](https://your-favorite-blog.com/article)"
+                  placeholder="https://your-favorite-blog.com/article"
                   value={contentUrl}
                   onChange={(e) => setContentUrl(e.target.value)}
                   disabled={isLoading}
@@ -102,26 +100,37 @@ export default function Dashboard() {
       {error && (
         <Alert variant="destructive" className="w-full max-w-xl mt-4">
           <AlertTitle>Error</AlertTitle>
-          <AlertDescription>
-            {error}
-          </AlertDescription>
+          <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
 
-      {results.length > 0 && (
-        <div className="w-full max-w-xl mt-8 space-y-4">
-          <h2 className="text-xl font-semibold">Generated Twitter Thread</h2>
-          {results.map((tweet, index) => (
-            <Card key={index}>
+      {results && (
+        <Tabs defaultValue="twitter" className="w-full max-w-xl mt-8">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="twitter">Twitter</TabsTrigger>
+            <TabsTrigger value="linkedin">LinkedIn</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="twitter" className="space-y-4 mt-4">
+            {results.twitterTweets.map((tweet, index) => (
+              <Card key={`tweet-${index}`}>
+                <CardContent className="p-4 flex justify-between items-start">
+                  <p className="text-sm mr-4">{tweet}</p>
+                  <Button variant="outline" size="sm" onClick={() => handleCopy(tweet)}>Copy</Button>
+                </CardContent>
+              </Card>
+            ))}
+          </TabsContent>
+
+          <TabsContent value="linkedin">
+            <Card>
               <CardContent className="p-4 flex justify-between items-start">
-                <p className="text-sm mr-4">{tweet}</p>
-                <Button variant="outline" size="sm" onClick={() => handleCopy(tweet)}>
-                  Copy
-                </Button>
+                <p className="text-sm whitespace-pre-wrap mr-4">{results.linkedInPost}</p>
+                <Button variant="outline" size="sm" onClick={() => handleCopy(results.linkedInPost)}>Copy</Button>
               </CardContent>
             </Card>
-          ))}
-        </div>
+          </TabsContent>
+        </Tabs>
       )}
     </div>
   )

@@ -41,22 +41,25 @@ export async function POST(request: Request) {
 
   try {
     // --- THE NEW PROMPT IS HERE ---
-    const prompt = `You are a viral marketing strategist. Your task is to extract the most valuable content from the following article and create 5 distinct, high-impact tweets. Each tweet must be completely standalone and make sense without the others. Do not number the tweets or imply they are part of a thread.
+    const prompt = `You are a viral marketing strategist. Your task is to extract the most valuable content from the following article and create a package of social media content.
 
-    - Tweet 1: A compelling question that makes the reader think.
-    - Tweet 2: The most surprising or controversial takeaway from the text.
-    - Tweet 3: A practical, actionable tip that readers can use immediately.
-    - Tweet 4: A powerful statistic or data point mentioned in the article.
-    - Tweet 5: An inspiring or motivational quote from the text.
-    
-    IMPORTANT: Your entire response must be a single, valid JSON object. The object should have a single key called "twitterThread", and its value should be an array of 5 strings, where each string is one of the tweets you generated.
+    First, create 5 distinct, high-impact, standalone tweets. Each tweet must be self-contained and make sense without the others.
+    - Tweet 1: A compelling question.
+    - Tweet 2: The most surprising takeaway.
+    - Tweet 3: A practical, actionable tip.
+    - Tweet 4: A powerful statistic or data point.
+    - Tweet 5: An inspiring quote.
+
+    Second, write one professional, insightful LinkedIn post based on the article's main themes. Use professional language and include 3-5 relevant hashtags.
+
+    IMPORTANT: Your entire response must be a single, valid JSON object. The object should have two keys: "twitterTweets" (an array of 5 strings) and "linkedInPost" (a single string).
 
     Article Text:
     ---
     ${articleText.substring(0, 30000)} 
     ---
     `;
-    console.log("Generating content with new 'Variety Pack' prompt...");
+    console.log("Generating content with new Multi-Output prompt...");
 
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
     
