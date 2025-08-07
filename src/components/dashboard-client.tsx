@@ -1,4 +1,3 @@
-// FILE: src/components/dashboard-client.tsx
 'use client'
 
 import { useState } from 'react'
@@ -9,15 +8,25 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "sonner"
 import { ThemeToggle } from '@/components/theme-toggle'
-import type { User } from '@supabase/supabase-js' // <-- Import the User type
+import type { User } from '@supabase/supabase-js'
 
-// Define a type for our results for better code safety
-type RepurposeResults = {
-  twitterTweets: string[];
-  linkedInPost: string;
+// --- Define a type for our expanded results ---
+// This type now accepts any string key for the tweet object
+type TweetObject = {
+  [key: string]: string;
 }
 
-// THE FIX IS HERE: Accept the user prop
+type RepurposeResults = {
+  twitterTweets: TweetObject[];
+  linkedInPost: string;
+  instagramCaption: string;
+  facebookPost: string;
+  tikTokScript: {
+    visual: string;
+    voiceover: string;
+  };
+}
+
 export default function DashboardClient({ user }: { user: User }) {
   const [contentUrl, setContentUrl] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -73,15 +82,13 @@ export default function DashboardClient({ user }: { user: User }) {
   }
 
   return (
-    <div className="flex flex-col justify-center items-center min-h-screen bg-background p-4 w-full">
+    <div className="flex flex-col justify-center items-center min-h-screen bg-background p-4">
       <div className="absolute top-4 right-4 flex items-center space-x-4">
-        {/* We can now display the user's email */}
         <p className="text-sm text-muted-foreground">{user.email}</p>
         <ThemeToggle />
       </div>
       
       <Card className="w-full max-w-xl">
-        {/* ... rest of your card component is unchanged */}
         <CardHeader>
           <CardTitle className="text-2xl">RepurposeAI</CardTitle>
           <CardDescription>
@@ -117,21 +124,27 @@ export default function DashboardClient({ user }: { user: User }) {
 
       {results && (
         <Tabs defaultValue="twitter" className="w-full max-w-xl mt-8">
-          {/* ... rest of your tabs component is unchanged */}
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="twitter">Twitter</TabsTrigger>
             <TabsTrigger value="linkedin">LinkedIn</TabsTrigger>
+            <TabsTrigger value="instagram">Instagram</TabsTrigger>
+            <TabsTrigger value="facebook">Facebook</TabsTrigger>
+            <TabsTrigger value="tiktok">TikTok</TabsTrigger>
           </TabsList>
           
           <TabsContent value="twitter" className="space-y-4 mt-4">
-            {results.twitterTweets.map((tweet, index) => (
-              <Card key={`tweet-${index}`}>
-                <CardContent className="p-4 flex justify-between items-start">
-                  <p className="text-sm mr-4">{tweet}</p>
-                  <Button variant="outline" size="sm" onClick={() => handleCopy(tweet)}>Copy</Button>
-                </CardContent>
-              </Card>
-            ))}
+            {results.twitterTweets.map((item, index) => {
+              // --- THE FIX IS HERE ---
+              const tweetText = Object.values(item)[0]; // Get the first (and only) value from the object
+              return (
+                <Card key={`tweet-${index}`}>
+                  <CardContent className="p-4 flex justify-between items-start">
+                    <p className="text-sm mr-4">{tweetText}</p>
+                    <Button variant="outline" size="sm" onClick={() => handleCopy(tweetText)}>Copy</Button>
+                  </CardContent>
+                </Card>
+              )
+            })}
           </TabsContent>
 
           <TabsContent value="linkedin">
@@ -139,6 +152,43 @@ export default function DashboardClient({ user }: { user: User }) {
               <CardContent className="p-4 flex justify-between items-start">
                 <p className="text-sm whitespace-pre-wrap mr-4">{results.linkedInPost}</p>
                 <Button variant="outline" size="sm" onClick={() => handleCopy(results.linkedInPost)}>Copy</Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+          
+          <TabsContent value="instagram">
+            <Card>
+              <CardContent className="p-4 flex justify-between items-start">
+                <p className="text-sm whitespace-pre-wrap mr-4">{results.instagramCaption}</p>
+                <Button variant="outline" size="sm" onClick={() => handleCopy(results.instagramCaption)}>Copy</Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="facebook">
+            <Card>
+              <CardContent className="p-4 flex justify-between items-start">
+                <p className="text-sm whitespace-pre-wrap mr-4">{results.facebookPost}</p>
+                <Button variant="outline" size="sm" onClick={() => handleCopy(results.facebookPost)}>Copy</Button>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="tiktok">
+            <Card>
+                <CardHeader>
+                    <CardTitle className="text-lg">TikTok Script</CardTitle>
+                </CardHeader>
+              <CardContent className="p-4 space-y-4">
+                <div>
+                    <h4 className="font-semibold mb-2">Visual:</h4>
+                    <p className="text-sm whitespace-pre-wrap">{results.tikTokScript.visual}</p>
+                </div>
+                <div>
+                    <h4 className="font-semibold mb-2">Voiceover:</h4>
+                    <p className="text-sm whitespace-pre-wrap">{results.tikTokScript.voiceover}</p>
+                </div>
+                <Button variant="outline" size="sm" onClick={() => handleCopy(`Visual: ${results.tikTokScript.visual}\n\nVoiceover: ${results.tikTokScript.voiceover}`)}>Copy Script</Button>
               </CardContent>
             </Card>
           </TabsContent>

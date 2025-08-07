@@ -9,7 +9,7 @@ if (!process.env.GEMINI_API_KEY) {
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 export async function POST(request: Request) {
-  console.log("Repurpose API endpoint hit (v5.1 - Standalone Tweets)");
+  console.log("Repurpose API endpoint hit (v6 - All Platforms)");
   const { contentUrl } = await request.json();
 
   if (!contentUrl) {
@@ -40,29 +40,36 @@ export async function POST(request: Request) {
   }
 
   try {
-    // --- THE NEW PROMPT IS HERE ---
-    const prompt = `You are a viral marketing strategist. Your task is to extract the most valuable content from the following article and create a package of social media content.
+    // --- THE NEW MASTER PROMPT ---
+    const prompt = `You are a viral marketing strategist and expert content creator. Your task is to extract the most valuable content from the following article and create a complete package of social media content for multiple platforms.
 
-    First, create 5 distinct, high-impact, standalone tweets. Each tweet must be self-contained and make sense without the others.
-    - Tweet 1: A compelling question.
-    - Tweet 2: The most surprising takeaway.
-    - Tweet 3: A practical, actionable tip.
-    - Tweet 4: A powerful statistic or data point.
-    - Tweet 5: An inspiring quote.
+    **Content Package Requirements:**
 
-    Second, write one professional, insightful LinkedIn post based on the article's main themes. Use professional language and include 3-5 relevant hashtags.
+    1.  **twitterTweets:** Generate 5 distinct, high-impact, standalone tweets.
+        - Tweet 1: A compelling question.
+        - Tweet 2: The most surprising takeaway.
+        - Tweet 3: A practical, actionable tip.
+        - Tweet 4: A powerful statistic or data point.
+        - Tweet 5: An inspiring quote.
 
-    IMPORTANT: Your entire response must be a single, valid JSON object. The object should have two keys: "twitterTweets" (an array of 5 strings) and "linkedInPost" (a single string).
+    2.  **linkedInPost:** Write one professional, insightful LinkedIn post based on the article's main themes. Use professional language and include 3-5 relevant hashtags.
 
-    Article Text:
+    3.  **instagramCaption:** Write one engaging Instagram caption. It should be visually descriptive, use emojis, and include a strong call to action and relevant hashtags.
+
+    4.  **facebookPost:** Write one slightly longer, more narrative-style Facebook post that tells a small story or provides deeper context from the article.
+
+    5.  **tikTokScript:** Write a script for a short (15-30 second) TikTok video. The script should have two parts: "visual" (a description of the on-screen action or text) and "voiceover" (the spoken audio).
+
+    **IMPORTANT:** Your entire response must be a single, valid JSON object. The object should have the keys: "twitterTweets", "linkedInPost", "instagramCaption", "facebookPost", and "tikTokScript".
+
+    **Article Text:**
     ---
     ${articleText.substring(0, 30000)} 
     ---
     `;
-    console.log("Generating content with new Multi-Output prompt...");
+    console.log("Generating content with new 'Master' prompt...");
 
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
-    
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
