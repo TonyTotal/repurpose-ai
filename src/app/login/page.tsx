@@ -1,16 +1,23 @@
 'use client'
 
-import { createBrowserClient } from '@supabase/ssr'
-import { Database } from '@/types/database.types'
 import { useState } from 'react'
+import { createBrowserClient } from '@supabase/ssr'
 import { useRouter } from 'next/navigation'
+import { Database } from '@/types/database.types'
+
+// Import Shadcn UI components
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default function Login() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [errorMsg, setErrorMsg] = useState<string | null>(null)
   const router = useRouter()
-
+  
   const supabase = createBrowserClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
@@ -18,7 +25,8 @@ export default function Login() {
 
   const handleSignUp = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    setErrorMsg(null) // Clear previous errors
+    setErrorMsg(null)
+    
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -28,16 +36,15 @@ export default function Login() {
       console.error('Sign Up Error:', error)
       setErrorMsg(error.message)
     } else {
-      // With email confirmation OFF, this should redirect.
-      // If it's ON, you'd show a "check your email" message.
-      router.push('/')
+      // After sign up, refresh to let the server component redirect
       router.refresh()
     }
   }
 
   const handleSignIn = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    setErrorMsg(null) // Clear previous errors
+    setErrorMsg(null)
+    
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -47,60 +54,68 @@ export default function Login() {
       console.error('Sign In Error:', error)
       setErrorMsg(error.message)
     } else {
+      // THE FIX IS HERE: Use router.push('/') for an explicit redirect
       router.push('/')
-      router.refresh()
     }
   }
 
   return (
-    <div style={{ width: '100%', maxWidth: '420px', margin: 'auto', paddingTop: '100px' }}>
-      <form onSubmit={handleSignIn} style={{ marginBottom: '20px' }}>
-        <h3>Sign In</h3>
-        <input
-          type="email"
-          name="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="email"
-          style={{ display: 'block', width: '100%', padding: '8px', marginBottom: '10px' }}
-        />
-        <input
-          type="password"
-          name="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="password"
-          style={{ display: 'block', width: '100%', padding: '8px', marginBottom: '10px' }}
-        />
-        <button type="submit">
-          Sign In
-        </button>
-      </form>
+    <div className="flex justify-center items-center min-h-screen bg-background p-4">
+      <Tabs defaultValue="signin" className="w-full max-w-sm">
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="signin">Sign In</TabsTrigger>
+          <TabsTrigger value="signup">Sign Up</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="signin">
+          <Card>
+            <CardHeader>
+              <CardTitle>Sign In</CardTitle>
+              <CardDescription>
+                Welcome back! Enter your credentials to access your dashboard.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <form onSubmit={handleSignIn}>
+                <div className="space-y-1">
+                  <Label htmlFor="email-signin">Email</Label>
+                  <Input id="email-signin" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="password-signin">Password</Label>
+                  <Input id="password-signin" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+                </div>
+                <Button className="w-full mt-4">Sign In</Button>
+              </form>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
-      <form onSubmit={handleSignUp}>
-        <h3>Sign Up</h3>
-        <input
-          type="email"
-          name="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          placeholder="email"
-          style={{ display: 'block', width: '100%', padding: '8px', marginBottom: '10px' }}
-        />
-        <input
-          type="password"
-          name="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="password"
-          style={{ display: 'block', width: '100%', padding: '8px', marginBottom: '10px' }}
-        />
-        <button type="submit">
-          Sign Up
-        </button>
-      </form>
-      
-      {errorMsg && <p style={{ color: 'red', marginTop: '20px' }}>{errorMsg}</p>}
+        <TabsContent value="signup">
+          <Card>
+            <CardHeader>
+              <CardTitle>Sign Up</CardTitle>
+              <CardDescription>
+                Create an account to start repurposing your content with AI.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <form onSubmit={handleSignUp}>
+                <div className="space-y-1">
+                  <Label htmlFor="email-signup">Email</Label>
+                  <Input id="email-signup" type="email" value={email} onChange={(e) => setEmail(e.target.value)} />
+                </div>
+                <div className="space-y-1">
+                  <Label htmlFor="password-signup">Password</Label>
+                  <Input id="password-signup" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+                </div>
+                <Button className="w-full mt-4">Sign Up</Button>
+              </form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        {errorMsg && <p className="text-sm text-red-500 mt-2 text-center">{errorMsg}</p>}
+      </Tabs>
     </div>
   )
 }
