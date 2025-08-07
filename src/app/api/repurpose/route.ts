@@ -9,7 +9,7 @@ if (!process.env.GEMINI_API_KEY) {
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
 
 export async function POST(request: Request) {
-  console.log("Repurpose API endpoint hit (v5 - Article Scraper)");
+  console.log("Repurpose API endpoint hit (v5.1 - Standalone Tweets)");
   const { contentUrl } = await request.json();
 
   if (!contentUrl) {
@@ -40,16 +40,23 @@ export async function POST(request: Request) {
   }
 
   try {
-    const prompt = `You are a world-class social media expert. Based on the following article text, create an engaging Twitter thread of 5 tweets.
+    // --- THE NEW PROMPT IS HERE ---
+    const prompt = `You are a viral marketing strategist. Your task is to extract the most valuable content from the following article and create 5 distinct, high-impact tweets. Each tweet must be completely standalone and make sense without the others. Do not number the tweets or imply they are part of a thread.
 
-    IMPORTANT: Your entire response must be a single, valid JSON object. The object should have a single key called "twitterThread", and its value should be an array of strings, where each string is a single tweet.
+    - Tweet 1: A compelling question that makes the reader think.
+    - Tweet 2: The most surprising or controversial takeaway from the text.
+    - Tweet 3: A practical, actionable tip that readers can use immediately.
+    - Tweet 4: A powerful statistic or data point mentioned in the article.
+    - Tweet 5: An inspiring or motivational quote from the text.
+    
+    IMPORTANT: Your entire response must be a single, valid JSON object. The object should have a single key called "twitterThread", and its value should be an array of 5 strings, where each string is one of the tweets you generated.
 
     Article Text:
     ---
     ${articleText.substring(0, 30000)} 
     ---
     `;
-    console.log("Generating content with AI...");
+    console.log("Generating content with new 'Variety Pack' prompt...");
 
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" });
     
@@ -58,7 +65,6 @@ export async function POST(request: Request) {
     const text = response.text();
     console.log("AI content generated successfully.");
 
-    // The AI now returns a JSON string, so we send it directly
     return NextResponse.json({ repurposedContent: text });
 
   } catch (error) {
