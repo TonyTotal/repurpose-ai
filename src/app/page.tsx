@@ -5,8 +5,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs" // Import Tabs
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "sonner"
+import { ThemeToggle } from '@/components/theme-toggle' // Import the toggle
 
 // Define a type for our results for better code safety
 type RepurposeResults = {
@@ -17,7 +18,7 @@ type RepurposeResults = {
 export default function Dashboard() {
   const [contentUrl, setContentUrl] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-  const [results, setResults] = useState<RepurposeResults | null>(null); // State is now an object or null
+  const [results, setResults] = useState<RepurposeResults | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleCopy = (textToCopy: string) => {
@@ -69,7 +70,11 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="flex flex-col justify-center items-center min-h-screen bg-gray-100 dark:bg-gray-900 p-4">
+    <div className="flex flex-col justify-center items-center min-h-screen bg-background p-4">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
+      
       <Card className="w-full max-w-xl">
         <CardHeader>
           <CardTitle className="text-2xl">RepurposeAI</CardTitle>
@@ -83,7 +88,7 @@ export default function Dashboard() {
               <div className="flex flex-col space-y-1.5">
                 <Input
                   id="contentUrl"
-                  placeholder="https://your-favorite-blog.com/article"
+                  placeholder="[https://your-favorite-blog.com/article](https://your-favorite-blog.com/article)"
                   value={contentUrl}
                   onChange={(e) => setContentUrl(e.target.value)}
                   disabled={isLoading}
